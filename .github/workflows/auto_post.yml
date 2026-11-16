@@ -2,9 +2,8 @@ name: Auto Post Space News
 
 on:
   schedule:
-    # Runs every 30 minutes
     - cron: '*/30 * * * *'
-  workflow_dispatch: # Allows manual testing with a button click
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -32,6 +31,7 @@ jobs:
 
       - name: Save posted article history
         run: |
+          touch last_post.txt
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add last_post.txt
