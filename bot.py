@@ -4,8 +4,12 @@ import requests
 BOT_TOKEN = os.environ["BOT_TOKEN"].strip()
 CHANNEL_ID = os.environ["CHANNEL_ID"].strip()
 
-# Free official Spaceflight News API (covers NASA, SpaceX, ESA, etc.)
 API_URL = "https://spaceflightnewsapi.net"
+
+HEADERS = {
+    "User-Agent": "AerospaceNewsUzBot/1.0 (https://t.me)",
+    "Accept": "application/json"
+}
 
 STATE_FILE = "last_post.txt"
 
@@ -33,12 +37,11 @@ def send_telegram_message(text):
 
 def main():
     posted = get_posted_links()
-    data = requests.get(API_URL, timeout=15).json()
+    resp = requests.get(API_URL, headers=HEADERS, timeout=15)
+    print("API Status Code:", resp.status_code)
+    data = resp.json()
     articles = data.get("results", [])
     print(f"Fetched {len(articles)} articles")
-
-    if not articles:
-        raise RuntimeError("No articles returned from API!")
 
     for article in reversed(articles):
         link = article["url"]
