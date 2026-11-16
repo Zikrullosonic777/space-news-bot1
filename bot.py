@@ -4,11 +4,13 @@ import requests
 BOT_TOKEN = os.environ["BOT_TOKEN"].strip()
 CHANNEL_ID = os.environ["CHANNEL_ID"].strip()
 
-API_URL = "https://spaceflightnewsapi.net"
+FEEDS = [
+    ("NASA", "https://reddit.com"),
+    ("SpaceX", "https://reddit.com")
+]
 
 HEADERS = {
-    "User-Agent": "AerospaceNewsUzBot/1.0 (https://t.me)",
-    "Accept": "application/json"
+    "User-Agent": "python:aerospace.news.uz:v1.0 (by /u/aerospace_news_uz)"
 }
 
 STATE_FILE = "last_post.txt"
@@ -37,26 +39,23 @@ def send_telegram_message(text):
 
 def main():
     posted = get_posted_links()
-    resp = requests.get(API_URL, headers=HEADERS, timeout=15)
-    print("API Status Code:", resp.status_code)
-    data = resp.json()
-    articles = data.get("results", [])
-    print(f"Fetched {len(articles)} articles")
-
-    for article in reversed(articles):
-        link = article["url"]
-        if link not in posted:
-            title = article["title"]
-            summary = article.get("summary", "")[:220] + "..."
-            source = article.get("news_site", "Space News")
-            message = (
-                f"🚀 <b>{title}</b>\n\n"
-                f"{summary}\n\n"
-                f"📡 <i>Source: {source}</i>\n"
-                f"🔗 <a href='{link}'>Read full article</a>"
-            )
-            send_telegram_message(message)
-            save_posted_link(link)
+    for tag, feed_url in FEEDS:
+        resp = requests.get(feed_url, headers=HEADERS, timeout=15)
+        print(tag, "Status:", resp.status_code)
+        posts = resp.json().get("data", {}).get("children", [])
+        for post in reversed(posts):
+            item = post["data"]
+            if item.get("stickied"):
+                continue
+            link = item["url"]
+            if link not in posted:
+                title = item["title"]
+                message = (
+                    f"🚀 <b>[{tag}] {title}</b>\n\n"
+                    f"🔗 <a href='{link}'>Read more / View media</a>"
+                )
+                send_telegram_message(message)
+                save_posted_link(link)
 
 if __name__ == "__main__":
     main()
